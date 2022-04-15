@@ -4,9 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Models\Resume;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class ResumeController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('auth');
+        
+    }
     /**
      * Display a listing of the resource.
      *
@@ -14,7 +22,9 @@ class ResumeController extends Controller
      */
     public function index()
     {
-        //
+        $resumes = auth()->user()->resumes;
+        
+        return view('resumes.index', compact('resumes'));
     }
 
     /**
@@ -36,7 +46,19 @@ class ResumeController extends Controller
      */
     public function store(Request $request)
     {
-        dd($request);
+        $user = Auth()->user();
+        $resume = $user->resumes()->where('title', $request->title)->first();
+            if($resume){
+                return back()
+                    ->withErrors(['title'=> 'You already have a resume with this name'])
+                    ->withInput(['title' => $request->title]);
+            }
+            $resume= $user->resumes()->create([
+            'title'=> $request['title'],
+            'name' => $user->name,
+            'email' => $user->email,
+        ]);
+        return redirect()->route('resumes.index');
     }
 
     /**
@@ -58,7 +80,9 @@ class ResumeController extends Controller
      */
     public function edit(Resume $resume)
     {
-        //
+        //$resume->auth()->user()->resumes()->where('id', $request->resume);
+        
+        return view('resumes.edit', compact('resume'));
     }
 
     /**
@@ -70,7 +94,17 @@ class ResumeController extends Controller
      */
     public function update(Request $request, Resume $resume)
     {
-        //
+        $data = $request->validate([
+            'name'=>'required|string',
+            'email'=> 'required|email',
+            'website' => 'nullable|url',
+            'picture' => 'nullable|image',
+            'about'=> 'nullable|string',
+            'title'=> Rule::unique('resumes')->where(function($query) use ($resume){
+                return $query->where('user_id', $resume->user->id);
+            })->ignore($resume->id)
+        ]);
+        dd($data);
     }
 
     /**
