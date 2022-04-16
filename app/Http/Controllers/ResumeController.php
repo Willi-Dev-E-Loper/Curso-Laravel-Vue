@@ -1,11 +1,13 @@
 <?php
 
 namespace App\Http\Controllers;
-
 use App\Models\Resume;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
+use Image;
+
+
 
 class ResumeController extends Controller
 {
@@ -58,7 +60,10 @@ class ResumeController extends Controller
             'name' => $user->name,
             'email' => $user->email,
         ]);
-        return redirect()->route('resumes.index');
+        return redirect()->route('resumes.index')->with('alert',[
+            'type' => 'primary',
+            'message' => "Resume $resume->title created successfully"
+        ]);;
     }
 
     /**
@@ -100,12 +105,26 @@ class ResumeController extends Controller
             'website' => 'nullable|url',
             'picture' => 'nullable|image',
             'about'=> 'nullable|string',
-            'title'=> Rule::unique('resumes')->where(function($query) use ($resume){
-                return $query->where('user_id', $resume->user->id);
-            })->ignore($resume->id)
+            'title'=> Rule::unique('resumes')
+                ->where(fn($query) => $query->where('user_id', $resume->user->id))
+                ->ignore($resume->id)
         ]);
-        dd($data);
-    }
+
+        if(array_key_exists('picture', $data)){
+            $picture =$data['picture']->store('pictures','public');
+            //Image::make para formatear todas las iamgenes al mismo tamaño, pero no consigo importar la libreria
+            //TODO
+            Image::make(public_path("storage/$picture"))->fit(800,800)->save();
+            $data['picture'] = $picture;
+
+        }
+
+        $resume->update($data);
+        return redirect()->route('resumes.index')->with('alert',[
+            'type' => 'success',
+            'message' => "Resume $resume->title update successfully"
+        ]);
+        }
 
     /**
      * Remove the specified resource from storage.
