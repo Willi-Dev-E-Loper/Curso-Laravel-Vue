@@ -74,7 +74,7 @@ class ResumeController extends Controller
      */
     public function show(Resume $resume)
     {
-        //
+        return view('resumes.show', compact('resume'));
     }
 
     /**
@@ -86,7 +86,8 @@ class ResumeController extends Controller
     public function edit(Resume $resume)
     {
         //$resume->auth()->user()->resumes()->where('id', $request->resume);
-        
+      
+        $this->authorize('update', $resume);
         return view('resumes.edit', compact('resume'));
     }
 
@@ -98,7 +99,7 @@ class ResumeController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function update(Request $request, Resume $resume)
-    {
+    {   
         $data = $request->validate([
             'name'=>'required|string',
             'email'=> 'required|email',
@@ -115,7 +116,7 @@ class ResumeController extends Controller
             //Image::make para formatear todas las iamgenes al mismo tamaño, pero no consigo importar la libreria
             //TODO
             Image::make(public_path("storage/$picture"))->fit(800,800)->save();
-            $data['picture'] = $picture;
+            $data['picture'] = "/storage/$picture";
 
         }
 
@@ -134,6 +135,11 @@ class ResumeController extends Controller
      */
     public function destroy(Resume $resume)
     {
-        //
+        $this->authorize('update', $resume);
+        $resume->delete();
+        return redirect()->route('resumes.index')->with('alert',[
+            'type' => 'danger',
+            'message' => "Resume $resume->title deleted successfully"
+        ]);
     }
 }

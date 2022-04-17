@@ -32,9 +32,14 @@
                             </div>
                 
                             <div class="ms-2">
-                                <a href="{{ route('resumes.destroy', $resume->id) }}" class="btn btn-danger">
+                               <form method="POST" action="{{ route('resumes.destroy', $resume->id) }}">
+                               @csrf
+                               @method('DELETE')
+                               <button type="submit" class="btn btn-danger" >
                                 Delete
-                                </a>
+                               </button>
+                               
+                               </form>
                             </div>
             
                         </div>
